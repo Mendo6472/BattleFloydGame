@@ -17,3 +17,5 @@ Si quieres ver una representacion de los vertices puedes ir a src/main/resources
 Para ver la distancia a las llaves para ganar presiona la tecla "M"
 
 Para ganar debes agarrar las 3 llaves, pierdes si un zombie te toca
+
+Al iniciar el juego poner pantalla maximizada porfis
