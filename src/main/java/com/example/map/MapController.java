@@ -53,12 +53,13 @@ public class MapController implements Initializable {
         int[][] matrix = null;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            //Este método lee la matriz que representa el mapa del juego.
             String line;
             int rows = 0;
             int columns = 0;
 
             // Contar el número de filas y columnas
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null) { //Mientras haya algo por leer
                 String[] values = line.trim().split("\\s+"); // Dividir la línea por espacios
 
                 if (columns == 0) {
@@ -77,7 +78,7 @@ public class MapController implements Initializable {
             BufferedReader br2 = new BufferedReader(new FileReader(filePath)); // Volver a abrir el archivo
 
             int currentRow = 0;
-            while ((line = br2.readLine()) != null) {
+            while ((line = br2.readLine()) != null) { //Mientras haya algo para leer
                 String[] values = line.trim().split("\\s+"); // Dividir la línea por espacios
 
                 for (int column = 0; column < values.length; column++) {
@@ -85,7 +86,7 @@ public class MapController implements Initializable {
                 }
 
                 currentRow++;
-            }
+            }//Se llena la matriz con los valores de las columnas y filas.
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -108,26 +109,30 @@ public class MapController implements Initializable {
             }
         }
         map = readMatrix("matrix.txt");
-        CANVAS_WIDTH = map[0].length*32;
+        CANVAS_WIDTH = map[0].length*32;//Se obtiene el total de pixeles en el ancho, teniendo en cuenta que cada
+        //rectángulo será de 32*32.
         CANVAS_HEIGHT = map.length*32;
         gc = canvas.getGraphicsContext2D();
         Random random = new Random();
-        for (int row = 0; row < map.length; row++) {
+        for (int row = 0; row < map.length; row++) {//Se recorre la matriz para encontrar colisiones
             for (int col = 0; col < map[row].length; col++) {
                 int number = map[row][col];
-                if(number != 14 && number != 56 && number != 67){
+                if(number != 14 && number != 56 && number != 67){ //Si no es alguno de estos números, hay una
+                    //colisión
                     Rectangle obstacle = new Rectangle(32*col, 32*row, 32, 32);
                     collisions.add(obstacle);
                 }
-                if(number == 56){
-                    int randomNumber = random.nextInt(20);
+                if(number == 56){ //Si el cuadro está marcado con una A
+                    int randomNumber = random.nextInt(20); //Se toma la probabilidad 1/20 por vértice para
+                    //añadir un enemigo.
                     Enemy enemy = null;
                     Vertex<Intersection> vertex = new Vertex<>(new Intersection(32*col, 32*row));
+                    //Se crea un vértice como intersección en ese cuadro.
                     if (randomNumber == 0) {
                         enemy = new Enemy(32*col, 32*row, "enemies/zombie.png", 3, 0, vertex);
                         enemies.add(enemy);
                     }
-                    pathFindingGraph.insertVertex(vertex);
+                    pathFindingGraph.insertVertex(vertex); //Se añade la intersección (vértice) dentro del grafo.
                     intersections.put(vertex.getValue().getiPosition() + " " + vertex.getValue().getjPosition(),vertex);
                 }
                 Image image = images.get(number);
@@ -137,7 +142,8 @@ public class MapController implements Initializable {
                 gc.drawImage(imageView.getImage(), 32*col, 32*row);
             }
         }
-        for(int i = 0; i < numberOfKeys; i++){
+        for(int i = 0; i < numberOfKeys; i++){ //Código que genera en lugares aleatorios las llaves en el mapa.
+            //Las llaves son intersecciones.
             int randomIndex = random.nextInt(pathFindingGraph.vertexList.size());
             Vertex<Intersection> vertex = pathFindingGraph.vertexList.get(randomIndex);
             if(!vertex.getValue().isHasKey()){
@@ -154,19 +160,19 @@ public class MapController implements Initializable {
         gc.drawImage(player.getSprite().getImage(), player.getxPosition(), player.getyPosition());
         draw.start();
         movePlayer.start();
-        generateEdgesForPathFinding();
+        generateEdgesForPathFinding(); //Se crean todas las aristas entre los vértices.
         trackPlayer.start();
     }
 
     public void generateEdgesForPathFinding(){
         ArrayList<Vertex<Intersection>> vertexList = pathFindingGraph.vertexList;
         for(Vertex<Intersection> v : vertexList){
-            int i = v.getValue().getiPosition();
+            int i = v.getValue().getiPosition(); //Posiciones del vértice en el mapa.
             int j = v.getValue().getjPosition();
             boolean finishLoop = false;
             for(int loop = j+1; loop < map[i].length && !finishLoop; loop++){
-                if(map[i][loop] != 14){
-                    if(map[i][loop] == 56){
+                if(map[i][loop] != 14){//Se pregunta si es diferente al cuadro del camino.
+                    if(map[i][loop] == 56){//Se pregunta si es igual a una A.
                         pathFindingGraph.insertEdge(v, intersections.get(i+ " " + loop),loop-j+1);
                     }
                     finishLoop = true;
@@ -208,36 +214,43 @@ public class MapController implements Initializable {
             System.out.println("No vertex found");
             return;
         }
-        currentPath = pathFindingGraph.dijkstra(currentPlayerVertex);
+        currentPath = pathFindingGraph.dijkstra(currentPlayerVertex); //Se usa Dijkstra para hallar el
+        //camino mínimo desde el enemigo hasta el jugador.
     }
 
     private void calculateCurrentPlayerVertex(){
         int playerX = player.getxPosition();
         int playerY = player.getyPosition();
         ArrayList<Intersection> intersectionList = new ArrayList<>();
-        for (Vertex<Intersection> vertex : pathFindingGraph.vertexList) {
+        for (Vertex<Intersection> vertex : pathFindingGraph.vertexList) { //Se calcula la distancia del jugador a cada
+            //vértice
             double distance = calculateDistance(playerX, vertex.getValue().getxPosition(), playerY, vertex.getValue().getyPosition());
             vertex.getValue().setDistanceToPlayer(distance);
             intersectionList.add(vertex.getValue());
         }
-        intersectionList.sort(Intersection::compareToDistance);
+        intersectionList.sort(Intersection::compareToDistance); //Se ordenan los vértices con base en sus
+        //distancias de manera ascendente (orden creciente)
         boolean foundVertex = false;
         Vertex<Intersection> vertex = null;
         for(int i = 0; i < intersectionList.size() && !foundVertex; i++){
             Intersection intersection = intersectionList.get(i);
             Line line = new Line(playerX, playerY, intersection.getxPosition(), intersection.getyPosition());
+            //Línea que representa las coordenadas del jugador hasta las coordenadas del vértice intersección.
             boolean lineIntersects = false;
+            //Booleano que comprueba si la linea interseca con alguna de las colisiones.
             for(int j = 0; j < collisions.size() && !lineIntersects; j++){
-                if(line.intersects(collisions.get(j).getBoundsInLocal())){
+                if(line.intersects(collisions.get(j).getBoundsInLocal())){//Se comprueba si la línea interseca
+                    //con los límites del objeto colisión actual.
                     lineIntersects = true;
                 }
             }
-            if(!lineIntersects) {
-                foundVertex = true;
+            if(!lineIntersects) { //La línea no interseca con ninguna de las colisiones.
+                foundVertex = true; //Se ha encontrado un vértice válido.
                 vertex = intersections.get(intersection.getiPosition() + " " + intersection.getjPosition());
             }
         }
-        if(vertex != null){
+        if(vertex != null){ //Se encuentra un vértice válido que no interseca con ninguna colisión por donde
+            //puede pasar una ruta o un camino válido hacia el punto.
             currentPlayerVertex = vertex;
         }
     }
@@ -294,30 +307,41 @@ public class MapController implements Initializable {
 
     public void calculateDistancesKeys() {
         calculateCurrentPlayerVertex();
-        FloydWarshalResult<Intersection> result = pathFindingGraph.floydWarshall();
+        FloydWarshalResult<Intersection> result = pathFindingGraph.floydWarshall(); //Se sua Floyd-Warshall
+        //para encontrar el camino mínimo entre el jugador y las llaves del juego.
         for(Key key : keys){
             Vertex<Intersection> keyVertex = intersections.get(key.getIntersection().getiPosition() + " " + key.getIntersection().getjPosition());
-            int keyPos = pathFindingGraph.vertexList.indexOf(keyVertex);
+            //Se obtiene el vértice de intersección de cada llave.
+            int keyPos = pathFindingGraph.vertexList.indexOf(keyVertex); //Se buscan las posiciones de la llave y
+            //del jugador en la lista de vértices.
             int playerPos = pathFindingGraph.vertexList.indexOf(currentPlayerVertex);
             if(playerPos == -1) System.out.println("no player?");
             if(keyPos == -1) System.out.println("no key");
             double totalDistance = 0;
             Vertex<Intersection> previous = result.getPrevious()[playerPos][keyPos];
+            //Se obtiene el vértice anterior en el camino más corto desde el jugador hasta la llave, usando la
+            //matriz de previos que está en el resultado de Floyd-Warshall.
             while(previous != null) {
-                totalDistance += result.getDistances()[playerPos][keyPos];
+                totalDistance += result.getDistances()[playerPos][keyPos]; //Se suma la distancia entre el
+                //jugador y la llave actual.
                 keyPos = pathFindingGraph.vertexList.indexOf(previous);
+                //Se actualiza la posición de la llave con la posición del vértice anterior.
                 previous = result.getPrevious()[playerPos][keyPos];
+                //Se actualiza el valor de previous con el vértice anterior al vértice actual.
             }
             //totalDistance += calculateDistance(currentPlayerVertex.getValue().getxPosition(), player.getxPosition(), currentPlayerVertex.getValue().getyPosition(), player.getyPosition());
-            key.setDistanceToPlayer((int) totalDistance);
+            key.setDistanceToPlayer((int) totalDistance); // Se actualiza la distancia desde la llave al
+            //jugador.
         }
-        keys.sort(Key::compareToDistance);
+        keys.sort(Key::compareToDistance); //Se organiza las distancias de las llaves de menor a mayor distancia
+        //hasta el jugador.
         String msj = "";
         for(Key key : keys){
             msj += "Shortest path to reach key "  + key.getId() + ": " + key.getDistanceToPlayer() + "\n";
+            //Mensaje con distancia más corta para alcanzar la llave actual.
         }
         Collections.reverse(keys);
-        if(keys.size() > 1){
+        if(keys.size() > 1){ //Si hay más de una llave.
             msj += "Shortest path to keys in following order:";
             for(Key key : keys){
                 msj += " " + key.getId();
@@ -327,20 +351,28 @@ public class MapController implements Initializable {
             for(int i = 0; i < keys.size()-1; i++){
                 Key key = keys.get(i);
                 Key nextKey = keys.get(i+1);
+                //Se obtienen los vértices de intersección de la llave actual y de la llave siguiente.
                 Vertex<Intersection> keyVertex = intersections.get(key.getIntersection().getiPosition() + " " + key.getIntersection().getjPosition());
                 Vertex<Intersection> nextKeyVertex = intersections.get(nextKey.getIntersection().getiPosition() + " " + nextKey.getIntersection().getjPosition());
                 int keyPos = pathFindingGraph.vertexList.indexOf(keyVertex);
                 int nextKeyPos = pathFindingGraph.vertexList.indexOf(currentPlayerVertex);
                 double totalDistance = 0;
+                //Se obtiene el vértice anterior en el camino más corto desde la siguiente llave hasta la llave
+                //actual usando la matriz de previous.
                 Vertex<Intersection> previous = result.getPrevious()[nextKeyPos][keyPos];
                 while(previous != null) {
-                    totalDistance += result.getDistances()[nextKeyPos][keyPos];
+                    totalDistance += result.getDistances()[nextKeyPos][keyPos]; //Se suma la distancia entre la
+                    //llave actual y la siguiente.
                     keyPos = pathFindingGraph.vertexList.indexOf(previous);
+                    //Se actualiza la posición de la llave actual con la posición del vértice anterior.
                     previous = result.getPrevious()[nextKeyPos][keyPos];
+                    //Se actualiza el valor de previous con el vértice anterior al vértice actual.
                 }
                 distance += totalDistance;
+                //Se añade la distancia total recorrida entre las llaves.
             }
             msj += distance;
+            //Se concatena la distancia total recorrida para alcanzar las llaves en el orden especificado.
         }
 
         keysPositions.setText(msj);
@@ -367,8 +399,10 @@ public class MapController implements Initializable {
             if(player.isGoRight()){
                 player.setxPosition(player.getxPosition() + player.getSpeed());
             }
-            for(Rectangle obstacle : collisions){
+            for(Rectangle obstacle : collisions){ //Por cada colisión
                 if(player.getHitbox().intersects(obstacle.getBoundsInLocal())){
+                    //Si el box del jugador inserseca con algún box de un obstáculo, se vuelve a poner al
+                    //jugador en la posición anterior.
                     player.setxPosition(oldPlayerX);
                     player.setyPosition(oldPlayerY);
                 }
