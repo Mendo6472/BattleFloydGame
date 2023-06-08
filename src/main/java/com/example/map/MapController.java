@@ -664,8 +664,7 @@ public class MapController implements Initializable {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    public void explodeRpg(Bullet bullet){ //quiero ver como vas a hacer el explotar
-        //TODO: LOS COMENTS SI TE ACUERDAS En español, yo ya estoy cabeceando mucho, yo creo que me despierto tipo 5 am o por ahí para terminar de estudiar el codigo. :D
+    public void explodeRpg(Bullet bullet){
         Circle explosion = new Circle(bullet.getxPosition(), bullet.getyPosition(), 100);
         Thread keepExplosion = new Thread(()->{
             ImageView explosionRpg = new ImageView(explosionImage);

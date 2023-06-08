@@ -9,16 +9,7 @@
     <option name="autoReloadType" value="SELECTIVE" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="34585651-aee1-4a98-9f78-d5d9449a81ba" name="Changes" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/map/MapController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/map/MapController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/music/firstLevel.mp3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/music/levelClear.mp3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/music/secondLevel.mp3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/music/thirdLevel.mp3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/sfx/explosionSFX.mp3" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/sfx/shotSFX.mp3" beforeDir="false" />
-    </list>
+    <list default="true" id="34585651-aee1-4a98-9f78-d5d9449a81ba" name="Changes" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -140,6 +131,7 @@
       <workItem from="1686002489105" duration="2342000" />
       <workItem from="1686060108765" duration="7239000" />
       <workItem from="1686181722474" duration="38438000" />
+      <workItem from="1686237951584" duration="387000" />
     </task>
     <servers />
   </component>
