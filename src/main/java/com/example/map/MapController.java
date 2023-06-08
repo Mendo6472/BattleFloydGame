@@ -84,12 +84,13 @@ public class MapController implements Initializable {
         int[][] matrix = null;
 
         try (BufferedReader br = new BufferedReader(new FileReader(filePath))) {
+            //Este método lee la matriz que representa el mapa del juego.
             String line;
             int rows = 0;
             int columns = 0;
 
             // Contar el número de filas y columnas
-            while ((line = br.readLine()) != null) {
+            while ((line = br.readLine()) != null) { //Mientras haya algo por leer
                 String[] values = line.trim().split("\\s+"); // Dividir la línea por espacios
 
                 if (columns == 0) {
@@ -108,7 +109,7 @@ public class MapController implements Initializable {
             BufferedReader br2 = new BufferedReader(new FileReader(filePath)); // Volver a abrir el archivo
 
             int currentRow = 0;
-            while ((line = br2.readLine()) != null) {
+            while ((line = br2.readLine()) != null) { //Mientras haya algo para leer
                 String[] values = line.trim().split("\\s+"); // Dividir la línea por espacios
 
                 for (int column = 0; column < values.length; column++) {
@@ -116,7 +117,7 @@ public class MapController implements Initializable {
                 }
 
                 currentRow++;
-            }
+            }//Se llena la matriz con los valores de las columnas y filas.
 
         } catch (IOException e) {
             e.printStackTrace();
@@ -171,7 +172,8 @@ public class MapController implements Initializable {
         for (int row = 0; row < map.length; row++) {
             for (int col = 0; col < map[row].length; col++) {
                 int number = map[row][col];
-                if(number != 14 && number != 56 && number != 67){
+                if(number != 14 && number != 56 && number != 67){ //Si no es alguno de estos números, hay una
+                    //colisión
                     Rectangle obstacle = new Rectangle(32*col, 32*row, 32, 32);
                     collisions.add(obstacle);
                 }
@@ -509,7 +511,7 @@ public class MapController implements Initializable {
             }
         });
         movePlayer.start();
-        generateEdgesForPathFinding();
+        generateEdgesForPathFinding(); //Se crean todas las aristas entre los vértices.
         trackPlayer.start();
         draw.start();
         shoot.start();
@@ -623,29 +625,35 @@ public class MapController implements Initializable {
         int playerX = player.getxPosition();
         int playerY = player.getyPosition();
         ArrayList<Intersection> intersectionList = new ArrayList<>();
-        for (Vertex<Intersection> vertex : pathFindingGraph.vertexList) {
+        for (Vertex<Intersection> vertex : pathFindingGraph.vertexList) { //Se calcula la distancia del jugador a cada
+            //vértice
             double distance = calculateDistance(playerX, vertex.getValue().getxPosition(), playerY, vertex.getValue().getyPosition());
             vertex.getValue().setDistanceToPlayer(distance);
             intersectionList.add(vertex.getValue());
         }
-        intersectionList.sort(Intersection::compareToDistance);
+        intersectionList.sort(Intersection::compareToDistance); //Se ordenan los vértices con base en sus
+        //distancias de manera ascendente (orden creciente)
         boolean foundVertex = false;
         Vertex<Intersection> vertex = null;
         for(int i = 0; i < intersectionList.size() && !foundVertex; i++){
             Intersection intersection = intersectionList.get(i);
             Line line = new Line(playerX, playerY, intersection.getxPosition(), intersection.getyPosition());
+            //Línea que representa las coordenadas del jugador hasta las coordenadas del vértice intersección.
             boolean lineIntersects = false;
+            //Booleano que comprueba si la linea interseca con alguna de las colisiones.
             for(int j = 0; j < collisions.size() && !lineIntersects; j++){
-                if(line.intersects(collisions.get(j).getBoundsInLocal())){
+                if(line.intersects(collisions.get(j).getBoundsInLocal())){//Se comprueba si la línea interseca
+                    //con los límites del objeto colisión actual.
                     lineIntersects = true;
                 }
             }
-            if(!lineIntersects) {
-                foundVertex = true;
+            if(!lineIntersects) { //La línea no interseca con ninguna de las colisiones.
+                foundVertex = true; //Se ha encontrado un vértice válido.
                 vertex = intersections.get(intersection.getiPosition() + " " + intersection.getjPosition());
             }
         }
-        if(vertex != null){
+        if(vertex != null){ //Se encuentra un vértice válido que no interseca con ninguna colisión por donde
+            //puede pasar una ruta o un camino válido hacia el punto.
             currentPlayerVertex = vertex;
         }
     }
