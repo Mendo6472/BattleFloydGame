@@ -140,14 +140,14 @@ public class MapController implements Initializable {
             }
             case 2 -> {
                 map = readMatrix("Map2.txt");
-                ammountOfEnemies = 20;
+                ammountOfEnemies = 12;
                 //File audioFile = new File("/music/secondLevel.mp3");
                 //Media media = new Media(audioFile.toURI().toString());
                 //mediaPlayer = new MediaPlayer(media);
             }
             case 3 -> {
                 map = readMatrix("Map3.txt");
-                ammountOfEnemies = 30;
+                ammountOfEnemies = 14;
                 player = new Player(2000, 2000,"player/playerSprite.png", 5, 3 );
                 //File audioFile = new File("/music/thirdLevel.mp3");
                 //Media media = new Media(audioFile.toURI().toString());

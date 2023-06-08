@@ -10,27 +10,14 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="34585651-aee1-4a98-9f78-d5d9449a81ba" name="Changes" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/artifacts/Map_jar.xml" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Bullet.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Gun.java" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/src/main/resources/META-INF/MANIFEST.MF" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/misc.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/misc.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/datastructures/Graph/AdjacencyListGraph/AdjacencyListGraph.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/datastructures/Graph/AdjacencyListGraph/AdjacencyListGraph.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/datastructures/Graph/AdjacencyMatrixGraph/AdjacencyMatrixGraph.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/datastructures/Graph/AdjacencyMatrixGraph/AdjacencyMatrixGraph.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/datastructures/NaryTree/NaryTree.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/datastructures/NaryTree/NaryTree.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/datastructures/NaryTree/Node.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/datastructures/NaryTree/Node.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/map/GameApp.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/map/GameApp.java" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/src/main/java/com/example/map/MapController.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/map/MapController.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/model/Avatar.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Avatar.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/model/Enemy.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Enemy.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/model/Player.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Player.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/com/example/model/Vector.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/com/example/model/Vector.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/java/module-info.java" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/java/module-info.java" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/com/example/map/map.fxml" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/com/example/map/map.fxml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/player/playerSprite.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/player/playerSprite.png" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/specialElements/key.png" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/src/main/resources/ui/Confetti.png" beforeDir="false" afterPath="$PROJECT_DIR$/src/main/resources/ui/Confetti.png" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/music/firstLevel.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/music/levelClear.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/music/secondLevel.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/music/thirdLevel.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/sfx/explosionSFX.mp3" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/main/resources/sfx/shotSFX.mp3" beforeDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -68,26 +55,26 @@
     <option name="hideEmptyMiddlePackages" value="true" />
     <option name="showLibraryContents" value="true" />
   </component>
-  <component name="PropertiesComponent"><![CDATA[{
-  "keyToString": {
-    "ASKED_ADD_EXTERNAL_FILES": "true",
-    "RunOnceActivity.OpenProjectViewOnStart": "true",
-    "RunOnceActivity.ShowReadmeOnStart": "true",
-    "SHARE_PROJECT_CONFIGURATION_FILES": "true",
-    "WebServerToolWindowFactoryState": "false",
-    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary": "JUnit5",
-    "com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5": "",
-    "last_opened_file_path": "C:/Users/mendo/OneDrive/Documents/GitHub/BattleFloydGame/lib/javafx-sdk-20.0.1",
-    "node.js.detected.package.eslint": "true",
-    "node.js.detected.package.tslint": "true",
-    "node.js.selected.package.eslint": "(autodetect)",
-    "node.js.selected.package.tslint": "(autodetect)",
-    "project.structure.last.edited": "Libraries",
-    "project.structure.proportion": "0.15",
-    "project.structure.side.proportion": "0.2",
-    "vue.rearranger.settings.migration": "true"
+  <component name="PropertiesComponent">{
+  &quot;keyToString&quot;: {
+    &quot;ASKED_ADD_EXTERNAL_FILES&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.OpenProjectViewOnStart&quot;: &quot;true&quot;,
+    &quot;RunOnceActivity.ShowReadmeOnStart&quot;: &quot;true&quot;,
+    &quot;SHARE_PROJECT_CONFIGURATION_FILES&quot;: &quot;true&quot;,
+    &quot;WebServerToolWindowFactoryState&quot;: &quot;false&quot;,
+    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrary&quot;: &quot;JUnit5&quot;,
+    &quot;com.intellij.testIntegration.createTest.CreateTestDialog.defaultLibrarySuperClass.JUnit5&quot;: &quot;&quot;,
+    &quot;last_opened_file_path&quot;: &quot;C:/Users/mendo/OneDrive/Documents/GitHub/BattleFloydGame/lib/javafx-sdk-20.0.1&quot;,
+    &quot;node.js.detected.package.eslint&quot;: &quot;true&quot;,
+    &quot;node.js.detected.package.tslint&quot;: &quot;true&quot;,
+    &quot;node.js.selected.package.eslint&quot;: &quot;(autodetect)&quot;,
+    &quot;node.js.selected.package.tslint&quot;: &quot;(autodetect)&quot;,
+    &quot;project.structure.last.edited&quot;: &quot;Libraries&quot;,
+    &quot;project.structure.proportion&quot;: &quot;0.15&quot;,
+    &quot;project.structure.side.proportion&quot;: &quot;0.2&quot;,
+    &quot;vue.rearranger.settings.migration&quot;: &quot;true&quot;
   }
-}]]></component>
+}</component>
   <component name="RecentsManager">
     <key name="CreateTestDialog.Recents.Supers">
       <recent name="" />
@@ -152,7 +139,7 @@
       <workItem from="1685742099805" duration="696000" />
       <workItem from="1686002489105" duration="2342000" />
       <workItem from="1686060108765" duration="7239000" />
-      <workItem from="1686181722474" duration="34741000" />
+      <workItem from="1686181722474" duration="38438000" />
     </task>
     <servers />
   </component>
