@@ -6,6 +6,8 @@ import javafx.event.EventHandler;
 import javafx.fxml.FXMLLoader;
 import javafx.scene.Scene;
 import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseDragEvent;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.stage.Stage;
@@ -26,20 +28,35 @@ public class GameApp extends Application {
                     case A -> mapController.movePlayerA();
                     case S -> mapController.movePlayerS();
                     case D -> mapController.movePlayerD();
-                    case M -> mapController.calculateDistancesKeys();
+                    case DIGIT1 -> mapController.changeToFirstGun();
+                    case DIGIT2 -> mapController.changeToSecondGun();
+                    case F5 -> mapController.retry();
+                    case G -> mapController.nextLevel();
                 }
             }
         });
         scene.setOnKeyReleased(new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent keyEvent) {
-
                 switch (keyEvent.getCode()) {
                     case W -> mapController.stopMovePlayerW();
                     case A -> mapController.stopMovePlayerA();
                     case S -> mapController.stopMovePlayerS();
                     case D -> mapController.stopMovePlayerD();
                 }
+            }
+        });
+        scene.setOnMouseDragged(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                mapController.handleMouseMove(mouseEvent);
+                mapController.shoot();
+            }
+        });
+        scene.setOnMouseReleased(new EventHandler<MouseEvent>() {
+            @Override
+            public void handle(MouseEvent mouseEvent) {
+                mapController.stopShooting();
             }
         });
         primaryStage.setScene(scene);

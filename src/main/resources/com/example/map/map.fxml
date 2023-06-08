@@ -7,10 +7,15 @@
 
 <Pane fx:id="pane" maxHeight="1080" maxWidth="1920" minHeight="720" minWidth="520" prefHeight="1080" prefWidth="1920" xmlns="http://javafx.com/javafx/17.0.2-ea" xmlns:fx="http://javafx.com/fxml/1" fx:controller="com.example.map.MapController">
    <children>
-      <Canvas fx:id="canvas" height="8000" width="8000" />
+      <Canvas fx:id="canvas" height="1080.0" width="1920.0" />
       <Label fx:id="keysPositions" text=" ">
          <font>
             <Font name="System Italic" size="16.0" />
+         </font>
+      </Label>
+      <Label fx:id="ammoLabel" layoutX="1684.0" layoutY="25.0">
+         <font>
+            <Font name="Berlin Sans FB" size="80.0" />
          </font>
       </Label>
    </children>

@@ -7,8 +7,19 @@ public class Node<V> {
     private V value;
     private ArrayList<Node<V>> children;
 
-    public Node(V value) {
+    public Node<V> getDad() {
+        return dad;
+    }
+
+    public void setDad(Node<V> dad) {
+        this.dad = dad;
+    }
+
+    private Node<V> dad;
+
+    public Node(V value, Node<V> dad) {
         this.value = value;
+        this.dad = dad;
         children = new ArrayList<>();
     }
 
@@ -79,8 +90,8 @@ public class Node<V> {
         return null;
     }
 
-    public void insertNode(V toInsert){
-        this.children.add(new Node<>(toInsert));
+    public void insertNode(V toInsert, Node<V> dad){
+        this.children.add(new Node<>(toInsert,dad));
     }
 
     public boolean isLeaf(){

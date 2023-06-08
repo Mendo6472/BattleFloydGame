@@ -8,6 +8,44 @@ public class Player extends Avatar{
     private boolean goRight = false;
     private int keysCollected = 0;
 
+    private int offsetX = 0;
+    private int offsetY = 0;
+    private Gun firstGun = null;
+    private Gun secondGun = null;
+    private boolean invincibilityFramesStatus = false;
+
+    public Gun getFirstGun() {
+        return firstGun;
+    }
+
+    public void setFirstGun(Gun firstGun) {
+        this.firstGun = firstGun;
+    }
+
+    public Gun getSecondGun() {
+        return secondGun;
+    }
+
+    public void setSecondGun(Gun secondGun) {
+        this.secondGun = secondGun;
+    }
+
+    public int getOffsetX() {
+        return offsetX;
+    }
+
+    public void setOffsetX(int offsetX) {
+        this.offsetX = offsetX;
+    }
+
+    public int getOffsetY() {
+        return offsetY;
+    }
+
+    public void setOffsetY(int offsetY) {
+        this.offsetY = offsetY;
+    }
+
     public int getKeysCollected() {
         return keysCollected;
     }
@@ -82,5 +120,20 @@ public class Player extends Avatar{
 
     public void setGoRight(boolean goRight) {
         this.goRight = goRight;
+    }
+
+    public void takeDamage(int damage){
+        Thread takeDamage = new Thread(()->{
+            if(invincibilityFramesStatus) return;
+            invincibilityFramesStatus = true;
+            health -= damage;
+            try {
+                Thread.sleep(1000);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            invincibilityFramesStatus = false;
+        });
+        takeDamage.start();
     }
 }

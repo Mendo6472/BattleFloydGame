@@ -95,7 +95,7 @@ public class AdjacencyMatrixGraph<V> implements IGraph<V> {
     @Override
     public NaryTree<V> BFS(Vertex<V> s) {
         NaryTree<V> naryTree = new NaryTree<>();
-        naryTree.setRoot(new Node<>(s.value));
+        naryTree.setRoot(new Node<>(s.value, null));
         Queue<Vertex<V>> queue = new LinkedList<>();
 
         for (Vertex<V> u :vertexList) {
@@ -137,7 +137,7 @@ public class AdjacencyMatrixGraph<V> implements IGraph<V> {
         for (Vertex<V> u: vertexList) {
             if (u.getColor() == Color.WHITE){
                 NaryTree<V> naryTree = new NaryTree<>();
-                naryTree.setRoot(new Node<V>(u.getValue()));
+                naryTree.setRoot(new Node<V>(u.getValue(), null));
                 DFSV(u, naryTree);
                 naryTrees.add(naryTree);
             }
@@ -231,7 +231,7 @@ public class AdjacencyMatrixGraph<V> implements IGraph<V> {
     @Override
     public NaryTree<Vertex<V>> prim(Vertex<V> s) {
         NaryTree<Vertex<V>> naryTree = new NaryTree<>();
-        naryTree.setRoot(new Node<>(s));
+        naryTree.setRoot(new Node<>(s,null));
         Heap<Double, Vertex<V>> queue = new Heap<>();
         queue.insert(0.0, s);
         for(Vertex <V> vertex : vertexList){

@@ -74,4 +74,5 @@ public abstract class Avatar {
     public void setHealth(double health) {
         this.health = health;
     }
+
 }

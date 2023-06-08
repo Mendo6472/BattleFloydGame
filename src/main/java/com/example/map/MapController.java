@@ -1,19 +1,30 @@
 package com.example.map;
 
 import com.example.datastructures.Graph.AdjacencyListGraph.AdjacencyListGraph;
+import com.example.datastructures.Graph.AdjacencyMatrixGraph.AdjacencyMatrixGraph;
 import com.example.datastructures.Graph.Graph.*;
+import com.example.datastructures.NaryTree.NaryTree;
 import com.example.model.*;
 import com.example.model.Vector;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Label;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Pane;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
+import javafx.scene.transform.Rotate;
+//import javafx.scene.media.Media;
+//import javafx.scene.media.MediaPlayer;
+
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -23,31 +34,51 @@ import java.net.URL;
 import java.util.*;
 
 public class MapController implements Initializable {
+    public Label ammoLabel;
+    boolean nextLevel = false;
+    boolean retry = false;
     @FXML
     public Canvas canvas;
     public Pane pane;
     public Label keysPositions;
     private GraphicsContext gc;
     private Image mapImage;
-    private final int SCREEN_WIDHT = 1920;
-    private final int SCREEN_HEIGHT = 1080;
+    private int SCREEN_WIDHT = 1920;
+    private int SCREEN_HEIGHT = 1080;
+    private int currentGun = 1;
 
     private int CANVAS_WIDTH;
     private int CANVAS_HEIGHT;
 
-    private final ArrayList<Rectangle> collisions = new ArrayList<>();
-    private final ArrayList<Enemy> enemies = new ArrayList<>();
-    private final ArrayList<Key> keys = new ArrayList<>();
+    private ArrayList<Rectangle> collisions = new ArrayList<>();
+    private ArrayList<Enemy> enemies = new ArrayList<>();
+    private ArrayList<Gun> guns = new ArrayList<>();
+    private ArrayList<Bullet> bullets = new ArrayList<>();
+    private ArrayList<ImageView> explosions = new ArrayList<>();
     private Player player;
     private int[][] map;
-    private int numberOfKeys = 3;
     private HashMap<Integer, Image> images = new HashMap<>();
     private AdjacencyListGraph<Intersection> pathFindingGraph = new AdjacencyListGraph<>(false, false);
     private HashMap<String, Vertex<Intersection>> intersections = new HashMap<>();
-    private DijkstraResult<Intersection> currentPath = null;
+    private NaryTree<Intersection> currentPath = null;
     private Vertex<Intersection> currentPlayerVertex = null;
     boolean lost = false;
     boolean win = false;
+
+
+    double mouseX = 0;
+    double mouseY = 0;
+    double angle = 0;
+
+    boolean shooting;
+    int currentLevel = 1;
+    //MediaPlayer mediaPlayer;
+
+    Image healthImage = ImageLoader.loadImage("ui/heart.png");
+    Image reticleImage = ImageLoader.loadImage("ui/reticle.png");
+    Image explosionImage = ImageLoader.loadImage("ui/explosion.png");
+    Image portalImage = ImageLoader.loadImage("ui/portal.png");
+    ImageView portalImageView = null;
 
     public static int[][] readMatrix(String filePath) {
         int[][] matrix = null;
@@ -94,6 +125,405 @@ public class MapController implements Initializable {
         return matrix;
     }
 
+    public void changeMap(int levelNumber){
+
+        player = new Player(2050, 2050, "player/playerSprite.png", 5, 3);
+        int ammountOfEnemies = 0;
+        switch (levelNumber) {
+            case 1 -> {
+                map = readMatrix("Map1.txt");
+                ammountOfEnemies = 10;
+                //File audioFile = new File("/music/firstLevel.mp3");
+                //Media media = new Media(audioFile.toURI().toString());
+                //mediaPlayer = new MediaPlayer(media);
+            }
+            case 2 -> {
+                map = readMatrix("Map2.txt");
+                ammountOfEnemies = 20;
+                //File audioFile = new File("/music/secondLevel.mp3");
+                //Media media = new Media(audioFile.toURI().toString());
+                //mediaPlayer = new MediaPlayer(media);
+            }
+            case 3 -> {
+                map = readMatrix("Map3.txt");
+                ammountOfEnemies = 30;
+                player = new Player(2000, 2000,"player/playerSprite.png", 5, 3 );
+                //File audioFile = new File("/music/thirdLevel.mp3");
+                //Media media = new Media(audioFile.toURI().toString());
+                //mediaPlayer = new MediaPlayer(media);
+            }
+        }
+        portalImageView = null;
+        win = false;
+        lost = false;
+        pathFindingGraph = new AdjacencyListGraph<>(false, false);
+        currentPath = null;
+        collisions = new ArrayList<>();
+        enemies = new ArrayList<>();
+        guns = new ArrayList<>();
+        bullets = new ArrayList<>();
+        CANVAS_WIDTH = map[0].length*32;
+        CANVAS_HEIGHT = map.length*32;
+        gc = canvas.getGraphicsContext2D();
+        Random random = new Random();
+        Canvas largeCanvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+        GraphicsContext largeGC = largeCanvas.getGraphicsContext2D();
+        for (int row = 0; row < map.length; row++) {
+            for (int col = 0; col < map[row].length; col++) {
+                int number = map[row][col];
+                if(number != 14 && number != 56 && number != 67){
+                    Rectangle obstacle = new Rectangle(32*col, 32*row, 32, 32);
+                    collisions.add(obstacle);
+                }
+                if(number == 56 || number == 14){
+                    Vertex<Intersection> vertex = new Vertex<>(new Intersection(32*col, 32*row));
+                    pathFindingGraph.insertVertex(vertex);
+                    intersections.put(vertex.getValue().getiPosition() + " " + vertex.getValue().getjPosition(),vertex);
+                }
+                Image image = images.get(number);
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(32);
+                imageView.setFitHeight(32);
+                largeGC.drawImage(imageView.getImage(), 32*col, 32*row);
+            }
+        }
+        for(int i = 0; i < ammountOfEnemies; i++){
+            int randomIndex = random.nextInt(pathFindingGraph.vertexList.size());
+            Vertex<Intersection> vertex = pathFindingGraph.vertexList.get(randomIndex);
+            if(!vertex.getValue().isHasKey()){
+                vertex.getValue().setHasKey(true);
+                Enemy enemy = new Enemy(vertex.getValue().getxPosition(), vertex.getValue().getyPosition(), "enemies/zombie.png", 5, 3, vertex);
+                enemies.add(enemy);
+            } else {
+                i--;
+            }
+        }
+        for(int i = 0; i < 2; i++){
+            int randomIndex = random.nextInt(pathFindingGraph.vertexList.size());
+            Vertex<Intersection> vertex = pathFindingGraph.vertexList.get(randomIndex);
+            Gun gun;
+            if(i == 0){
+                gun = new Gun(vertex.getValue().getxPosition(), vertex.getValue().getyPosition(), "guns/m134.png", "guns/m134_d.png","guns/bullets/gold.png",false, 30, 100, 1000);
+            } else {
+                gun = new Gun(vertex.getValue().getxPosition(), vertex.getValue().getyPosition(), "guns/rpglauncher.png", "guns/rpglauncher_d.png", "guns/bullets/rpg.png",true, 1, 1000, 3000);
+            }
+            guns.add(gun);
+        }
+
+        //Threads
+
+        Thread draw = new Thread(()->{
+            double offsetX = 0;
+            double offsetY = 0;
+            while (!win && !lost){
+                SCREEN_HEIGHT = (int) pane.getHeight();
+                SCREEN_WIDHT = (int) pane.getWidth();
+                try {
+                    Thread.sleep((long) 1000/60);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                offsetX = player.getxPosition() - SCREEN_WIDHT / 2 + 16;
+                offsetY = player.getyPosition() - SCREEN_HEIGHT / 2 + 16;
+                player.setOffsetX((int) offsetX);
+                player.setOffsetY((int) offsetY);
+                int playerXdraw = SCREEN_WIDHT/2-16;
+                int playerYdraw = SCREEN_HEIGHT/2-16;
+                if(offsetX < 0){
+                    playerXdraw += offsetX;
+                    offsetX = 0;
+                }
+                if(offsetY < 0){
+                    playerYdraw += offsetY;
+                    offsetY = 0;
+                }
+                if(offsetX > CANVAS_WIDTH - SCREEN_WIDHT){
+                    playerXdraw += Math.abs(offsetX - (CANVAS_WIDTH - SCREEN_WIDHT));
+                    offsetX = CANVAS_WIDTH - SCREEN_WIDHT;
+                }
+                if(offsetY > CANVAS_HEIGHT - SCREEN_HEIGHT){
+                    playerYdraw += Math.abs(offsetY - (CANVAS_HEIGHT - SCREEN_HEIGHT));
+                    offsetY = CANVAS_HEIGHT - SCREEN_HEIGHT;
+                }
+                gc.drawImage(mapImage, offsetX, offsetY, 1920, 1080, 0, 0, 1920, 1080);
+                for(Gun gun : guns){
+                    gc.drawImage(gun.getFloorSprite().getImage(), gun.getxSpawn() - offsetX, gun.getySpawn() - offsetY);
+                }
+                gc.save();
+                gc.translate(playerXdraw+16, playerYdraw+16);
+                gc.rotate(player.getSprite().getRotate());
+                gc.drawImage(player.getSprite().getImage(), -16 , -16);
+                switch (currentGun) {
+                    case 1 -> {
+                        if (player.getFirstGun() != null) {
+                            gc.drawImage(player.getFirstGun().getSprite().getImage(), 0, 0);
+                        }
+                    }
+                    case 2 -> {
+                        if (player.getSecondGun() != null) {
+                            gc.drawImage(player.getSecondGun().getSprite().getImage(), 0, 0);
+                        }
+                    }
+                }
+                gc.restore();
+                for(int i = 0; i < bullets.size(); i++){
+                    gc.save();
+                    gc.translate(bullets.get(i).getxPosition() - offsetX, bullets.get(i).getyPosition() - offsetY);
+                    gc.rotate(bullets.get(i).getSprite().getRotate());
+                    gc.drawImage(bullets.get(i).getSprite().getImage(), 0, 0);
+                    gc.restore();
+                }
+                for(Enemy enemy : enemies){
+                    gc.drawImage(enemy.getSprite().getImage(), enemy.getxPosition() - offsetX, enemy.getyPosition() - offsetY);
+                }
+                for(ImageView explosion : explosions){
+                    gc.drawImage(explosion.getImage(), explosion.getX() - offsetX, explosion.getY() - offsetY, 200, 200);
+                }
+                if(portalImageView != null){
+                    gc.drawImage(portalImageView.getImage(), portalImageView.getX() - offsetX, portalImageView.getY() - offsetY, 32, 32);
+                }
+                int startingXHealth = 10;
+                for(int i = 0; i < player.getHealth(); i++){
+                    gc.drawImage(healthImage, startingXHealth, 0, 60, 60);
+                    startingXHealth += 70;
+                }
+                gc.drawImage(reticleImage, mouseX-32, mouseY-32, 64, 64);
+                if(player.getFirstGun() != null){
+                    gc.drawImage(player.getFirstGun().getSprite().getImage(), 20, 70, 100, 100);
+                }
+                if(player.getSecondGun() != null){
+                    gc.drawImage(player.getSecondGun().getSprite().getImage(), 140, 70, 200, 100);
+                }
+                switch (currentGun){
+                    case 1 ->{
+                        if(player.getFirstGun()!=null){
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ammoLabel.setText(player.getFirstGun().getCurrentAmmo() + "/" + player.getFirstGun().getAmmo());
+                                }
+                            });
+                        }
+                    }
+                    case 2 ->{
+                        if(player.getSecondGun()!=null){
+                            Platform.runLater(new Runnable() {
+                                @Override
+                                public void run() {
+                                    ammoLabel.setText(player.getSecondGun().getCurrentAmmo() + "/" + player.getSecondGun().getAmmo());
+                                }
+                            });
+
+                        }
+                    }
+                }
+            }
+        });
+        Thread shoot = new Thread(()->{ //Hilo que permite realizar los disparos de las armas por parte del jugador.
+            while (!win && !lost){
+                if(shooting){
+                    double timeToWait = -1; //Velocidad de fuego del arma.
+                    ImageView bulletImage = null;
+                    boolean isRpg = false;
+                    boolean canShoot = false;
+                    Gun gun = null;
+                    switch (currentGun) {
+                        case 1 -> {
+                            if (player.getFirstGun() != null) {
+                                timeToWait = player.getFirstGun().getFireRate();
+                                bulletImage = player.getFirstGun().getBulletSprite();
+                                canShoot = player.getFirstGun().canShoot();
+                                gun = player.getFirstGun();
+                            }
+                        }
+                        case 2 -> {
+                            if (player.getSecondGun() != null) {
+                                timeToWait = player.getSecondGun().getFireRate();
+                                bulletImage = player.getSecondGun().getBulletSprite();
+                                isRpg = true;
+                                canShoot = player.getSecondGun().canShoot();
+                                gun = player.getSecondGun();
+                            }
+                        }
+                    }
+                    if(timeToWait != -1 && canShoot){
+                        int offsetX = player.getOffsetX();
+                        int offsetY = player.getOffsetY();
+                        int screenWidthCenter = SCREEN_WIDHT/2;
+                        int screenHeightCenter = SCREEN_HEIGHT/2;
+                        if(offsetX < 0){
+                            screenWidthCenter += offsetX;
+                        }
+                        if(offsetY < 0){
+                            screenHeightCenter += offsetY;
+                        }
+                        if(offsetX > CANVAS_WIDTH - SCREEN_WIDHT){
+                            screenWidthCenter += Math.abs(offsetX - (CANVAS_WIDTH - SCREEN_WIDHT));
+                        }
+                        if(offsetY > CANVAS_HEIGHT - SCREEN_HEIGHT){
+                            screenHeightCenter += Math.abs(offsetY - (CANVAS_HEIGHT - SCREEN_HEIGHT));
+                        }
+                        double diffX = mouseX - screenWidthCenter; //Se calcula la distancia que hay entre el mouse y el centro
+                        //de la pantalla con respecto a X e Y.
+                        double diffY = mouseY - screenHeightCenter;
+                        Vector diff = new Vector(diffX, diffY);
+                        diff.normalize(); //Se normaliza el vector con la intención que no cambie la velocidad de la bala dependiendo
+                        //de la distancia.
+                        diff.setMag(10); //velocidad con la que se moverá la bala.
+                        Bullet bullet = new Bullet(player.getxPosition()+16, player.getyPosition()+16,(int) bulletImage.getFitWidth(),(int) bulletImage.getFitHeight() , bulletImage, diff, isRpg);
+                        angle = Math.toDegrees(Math.atan2(mouseY - screenHeightCenter, mouseX - screenWidthCenter));
+                        bullet.getSprite().setRotate(angle);
+                        bullets.add(bullet);
+                        gun.setCurrentAmmo(gun.getCurrentAmmo()-1);
+                        if(gun.getCurrentAmmo() <= 0){
+                            gun.reload();
+                        }
+                        try {
+                            Thread.sleep((long) timeToWait); //Se dispara teniendo en cuenta la cadencia o velocidad de fuego
+                            //del arma.
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    } else {
+                        try {
+                            Thread.sleep((long) 16.666);
+                        } catch (InterruptedException e) {
+                            throw new RuntimeException(e);
+                        }
+                    }
+                } else {
+                    try {
+                        Thread.sleep((long) 16.666);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+            }
+        });
+
+        Thread movePlayer = new Thread(()->{
+            int oldPlayerX = player.getxPosition();
+            int oldPlayerY = player.getyPosition();
+            while (!lost && !win){
+                try {
+                    Thread.sleep((long) 1000/60);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                if(player.isGoUp()){
+                    player.setyPosition(player.getyPosition() - player.getSpeed());
+                }
+                if(player.isGoDown()){
+                    player.setyPosition(player.getyPosition() + player.getSpeed());
+                }
+                if(player.isGoLeft()){
+                    player.setxPosition(player.getxPosition() - player.getSpeed());
+                }
+                if(player.isGoRight()){
+                    player.setxPosition(player.getxPosition() + player.getSpeed());
+                }
+                for(Rectangle obstacle : collisions){
+                    if(player.getHitbox().intersects(obstacle.getBoundsInLocal())){
+                        player.setxPosition(oldPlayerX);
+                        player.setyPosition(oldPlayerY);
+                    }
+                }
+                oldPlayerX = player.getxPosition();
+                oldPlayerY = player.getyPosition();
+                for(int i = 0; i < guns.size(); i++){
+                    Gun gun = guns.get(i);
+                    if(player.getHitbox().intersects(gun.getHitbox().getBoundsInLocal())){
+                        if(gun.isExplosive()){
+                            player.setSecondGun(gun);
+                        } else {
+                            player.setFirstGun(gun);
+                        }
+                        guns.remove(gun);
+                    }
+                }
+                for(int i = 0; i < bullets.size(); i++){
+                    Bullet bullet = bullets.get(i);
+                    bullet.moveBullet();
+                    boolean colliding = false;
+                    for(int j = 0; j < enemies.size() && !colliding; j++){
+                        Enemy enemy = enemies.get(j);
+                        if(bullet.getHitbox().intersects(enemy.getHitbox().getBoundsInLocal())){
+                            if(bullet.isRpg()){
+                                explodeRpg(bullet);
+                            } else{
+                                enemy.takeDamage(1);
+                            }
+                            bullets.remove(bullet);
+                            colliding = true;
+                        }
+                    }
+                    for(int j = 0; j < collisions.size() && !colliding; j++){
+                        Rectangle rectangle = collisions.get(j);
+                        if(bullet.getHitbox().intersects(rectangle.getBoundsInLocal())){
+                            if(bullet.isRpg()){
+                                explodeRpg(bullet);
+                            }
+                            bullets.remove(bullet);
+                            colliding = true;
+                        }
+                    }
+                }
+                for(int j = 0; j < enemies.size(); j++) {
+                    Enemy enemy = enemies.get(j);
+                    if(enemy.getHealth() <= 0){
+                        enemies.remove(enemy);
+                    } else {
+                        enemy.moveEnemy(currentPath, player, pathFindingGraph.vertexList, collisions, intersections);
+                        if(player.getHitbox().intersects(enemy.getHitbox().getBoundsInLocal())){
+                            player.takeDamage(1);
+                        }
+                    }
+                }
+                if(player.getHealth() <= 0){
+                    lost = true;
+                }
+                if(enemies.size() == 0 && portalImageView == null){
+                    portalImageView = new ImageView(portalImage);
+                    int randomIndex = random.nextInt(pathFindingGraph.vertexList.size());
+                    Vertex<Intersection> vertex = pathFindingGraph.vertexList.get(randomIndex);
+                    portalImageView.setX(vertex.getValue().getxPosition());
+                    portalImageView.setY(vertex.getValue().getyPosition());
+                }
+                if(portalImageView != null){
+                    Rectangle rectangle = new Rectangle(portalImageView.getX(), portalImageView.getY(), 32, 32);
+                    if(player.getHitbox().intersects(rectangle.getBoundsInLocal())){
+                        win = true;
+                    }
+                }
+            }
+        });
+
+        Thread trackPlayer = new Thread(() -> {
+            while (!win && !lost){
+                try {
+                    Thread.sleep((long)1000);
+                } catch (InterruptedException e) {
+                    throw new RuntimeException(e);
+                }
+                moveEnemiesToPlayer();
+            }
+        });
+        movePlayer.start();
+        generateEdgesForPathFinding();
+        trackPlayer.start();
+        draw.start();
+        shoot.start();
+        // Combine the images onto a single image
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                mapImage = largeCanvas.snapshot(null, null);
+            }
+        });
+        //mediaPlayer.play();
+
+    }
+
     @Override
     public void initialize(URL url, ResourceBundle resourceBundle) {
         File directory = new File("src/main/resources/numbers");
@@ -107,97 +537,75 @@ public class MapController implements Initializable {
                 images.put(filePos, image);
             }
         }
-        map = readMatrix("matrix.txt");
-        CANVAS_WIDTH = map[0].length*32;
-        CANVAS_HEIGHT = map.length*32;
-        gc = canvas.getGraphicsContext2D();
-        Random random = new Random();
-        for (int row = 0; row < map.length; row++) {
-            for (int col = 0; col < map[row].length; col++) {
-                int number = map[row][col];
-                if(number != 14 && number != 56 && number != 67){
-                    Rectangle obstacle = new Rectangle(32*col, 32*row, 32, 32);
-                    collisions.add(obstacle);
-                }
-                if(number == 56){
-                    int randomNumber = random.nextInt(20);
-                    Enemy enemy = null;
-                    Vertex<Intersection> vertex = new Vertex<>(new Intersection(32*col, 32*row));
-                    if (randomNumber == 0) {
-                        enemy = new Enemy(32*col, 32*row, "enemies/zombie.png", 3, 0, vertex);
-                        enemies.add(enemy);
-                    }
-                    pathFindingGraph.insertVertex(vertex);
-                    intersections.put(vertex.getValue().getiPosition() + " " + vertex.getValue().getjPosition(),vertex);
-                }
-                Image image = images.get(number);
-                ImageView imageView = new ImageView(image);
-                imageView.setFitWidth(32);
-                imageView.setFitHeight(32);
-                gc.drawImage(imageView.getImage(), 32*col, 32*row);
-            }
-        }
-        for(int i = 0; i < numberOfKeys; i++){
-            int randomIndex = random.nextInt(pathFindingGraph.vertexList.size());
-            Vertex<Intersection> vertex = pathFindingGraph.vertexList.get(randomIndex);
-            if(!vertex.getValue().isHasKey()){
-                vertex.getValue().setHasKey(true);
-                Key key = new Key(vertex.getValue().getxPosition(), vertex.getValue().getyPosition(), "specialElements/key.png", vertex.getValue(), i + "");
-                keys.add(key);
-            } else {
-                i--;
-            }
-        }
-        // Combine the images onto a single image
-        mapImage = canvas.snapshot(null, null);
-        player = new Player(2050, 2050, "player/playerSprite.png", 5, 0);
+        changeMap(1);
         gc.drawImage(player.getSprite().getImage(), player.getxPosition(), player.getyPosition());
-        draw.start();
-        movePlayer.start();
-        generateEdgesForPathFinding();
-        trackPlayer.start();
+        canvas.setOnMouseMoved(this::handleMouseMove);
+        canvas.setFocusTraversable(true);
+        winOrLose.start();
     }
+
+    Thread winOrLose = new Thread(()->{
+        while (currentLevel <= 3){
+            try {
+                Thread.sleep((long)16.66);
+            } catch (InterruptedException e) {
+                throw new RuntimeException(e);
+            }
+            if(win){
+                currentLevel++;
+                if(currentLevel == 4){
+                    gc.drawImage(ImageLoader.loadImage("ui/confetti.png"), 0, 0, SCREEN_WIDHT, SCREEN_HEIGHT);    
+                }
+                gc.drawImage(ImageLoader.loadImage("ui/confetti.png"), 0, 0, SCREEN_WIDHT, SCREEN_HEIGHT);
+                gc.drawImage(ImageLoader.loadImage("ui/nextLevel.png"), SCREEN_WIDHT/2-200, SCREEN_HEIGHT/2-200, 400, 400);
+                while (!nextLevel){
+                    try {
+                        Thread.sleep((long)16.66);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                win = false;
+                nextLevel = false;
+                changeMap(currentLevel);
+            } else if (lost){
+                gc.drawImage(ImageLoader.loadImage("ui/BloodOverlay.png"), 0, 0, SCREEN_WIDHT, SCREEN_HEIGHT);
+                gc.drawImage(ImageLoader.loadImage("ui/retry.png"), SCREEN_WIDHT/2-200, SCREEN_HEIGHT/2-200, 400, 400);
+                while (!retry){
+                    try {
+                        Thread.sleep((long)16.66);
+                    } catch (InterruptedException e) {
+                        throw new RuntimeException(e);
+                    }
+                }
+                lost = false;
+                retry = false;
+                changeMap(currentLevel);
+            }
+        }
+    });
 
     public void generateEdgesForPathFinding(){
         ArrayList<Vertex<Intersection>> vertexList = pathFindingGraph.vertexList;
-        for(Vertex<Intersection> v : vertexList){
+        for(Vertex<Intersection> v : vertexList) {
             int i = v.getValue().getiPosition();
             int j = v.getValue().getjPosition();
-            boolean finishLoop = false;
-            for(int loop = j+1; loop < map[i].length && !finishLoop; loop++){
-                if(map[i][loop] != 14){
-                    if(map[i][loop] == 56){
-                        pathFindingGraph.insertEdge(v, intersections.get(i+ " " + loop),loop-j+1);
-                    }
-                    finishLoop = true;
+            if(!(j-1 == -1)) {
+                if (map[i][j - 1] == 14 || map[i][j - 1] == 56) {
+                    pathFindingGraph.insertEdge(v, intersections.get(i + " " + (j - 1)), 0);
                 }
             }
-            finishLoop = false;
-            for(int loop = j-1; loop >= 0 && !finishLoop; loop--){
-                if(map[i][loop] != 14){
-                    if(map[i][loop] == 56){
-                        pathFindingGraph.insertEdge(v, intersections.get(i + " " + loop),j-loop+1);
-                    }
-                    finishLoop = true;
+
+            if(!(j+1 >= map[i].length)){
+                if(map[i][j+1] == 14 || map[i][j+1] == 56){
+                    pathFindingGraph.insertEdge(v,intersections.get(i+" "+(j+1)),0);
                 }
             }
-            finishLoop = false;
-            for(int loop = i+1; loop < map.length && !finishLoop; loop++){
-                if(map[loop][j] != 14){
-                    if(map[loop][j] == 56){
-                        pathFindingGraph.insertEdge(v, intersections.get(loop + " " + j),loop-i+1);
-                    }
-                    finishLoop = true;
-                }
+            if(map[i-1][j] == 14 || map[i-1][j] == 56){
+                pathFindingGraph.insertEdge(v, intersections.get((i+1)+" "+j),0);
             }
-            finishLoop = false;
-            for(int loop = i-1; loop >= 0 && !finishLoop; loop--){
-                if(map[loop][j] != 14){
-                    if(map[loop][j] == 56){
-                        pathFindingGraph.insertEdge(v, intersections.get(loop + " " + j),i-loop+1);
-                    }
-                    finishLoop = true;
-                }
+            if(map[i+1][j] == 14 || map[i+1][j] == 56){
+                pathFindingGraph.insertEdge(v, intersections.get((i-1)+" "+j),0);
             }
         }
     }
@@ -208,7 +616,7 @@ public class MapController implements Initializable {
             System.out.println("No vertex found");
             return;
         }
-        currentPath = pathFindingGraph.dijkstra(currentPlayerVertex);
+        currentPath = pathFindingGraph.BFS(currentPlayerVertex);
     }
 
     private void calculateCurrentPlayerVertex(){
@@ -248,162 +656,96 @@ public class MapController implements Initializable {
         return Math.sqrt(dx * dx + dy * dy);
     }
 
-    public void win(){
-
-    }
-
-    public void lose(){
-
-    }
-
-    Thread draw = new Thread(()->{
-        double offsetX = 0;
-        double offsetY = 0;
-        while (!win && !lost){
+    public void explodeRpg(Bullet bullet){ //quiero ver como vas a hacer el explotar
+        //TODO: LOS COMENTS SI TE ACUERDAS En español, yo ya estoy cabeceando mucho, yo creo que me despierto tipo 5 am o por ahí para terminar de estudiar el codigo. :D
+        Circle explosion = new Circle(bullet.getxPosition(), bullet.getyPosition(), 100);
+        Thread keepExplosion = new Thread(()->{
+            ImageView explosionRpg = new ImageView(explosionImage);
+            explosionRpg.setX(explosion.getCenterX()-100);
+            explosionRpg.setY(explosion.getCenterY()-100);
+            explosions.add(explosionRpg);
             try {
-                Thread.sleep((long) 1000/60);
+                Thread.sleep(1000);
             } catch (InterruptedException e) {
                 throw new RuntimeException(e);
             }
-            offsetX = player.getxPosition() - SCREEN_WIDHT / 2;
-            offsetY = player.getyPosition() - SCREEN_HEIGHT / 2;
-            if(offsetX > CANVAS_WIDTH - SCREEN_WIDHT) offsetX -= Math.abs(offsetX-(CANVAS_WIDTH-SCREEN_WIDHT));
-            if(offsetY > CANVAS_HEIGHT - SCREEN_HEIGHT) offsetY -= Math.abs(offsetY-(CANVAS_HEIGHT - SCREEN_HEIGHT));
-            if(offsetX < 0) offsetX = 0;
-            if(offsetY < 0) offsetY = 0;
-            gc.drawImage(mapImage, offsetX, offsetY, 1980, 1080, offsetX, offsetY, 1980, 1080);
-            for(Key key : keys){
-                gc.drawImage(key.getSprite().getImage(), key.getxPosition(), key.getyPosition());
-            }
-            gc.drawImage(player.getSprite().getImage(), player.getxPosition(), player.getyPosition());
-            for(Enemy enemy : enemies){
-                gc.drawImage(enemy.getSprite().getImage(), enemy.getxPosition(), enemy.getyPosition());
-            }
-            if(offsetX > 0 && offsetX < CANVAS_WIDTH - SCREEN_WIDHT) canvas.setTranslateX(-offsetX);
-            if(offsetY > 0 && offsetY < CANVAS_HEIGHT - SCREEN_HEIGHT) canvas.setTranslateY(-offsetY);
-            if(keys.size() == 0){
-                win = true;
+            explosions.remove(explosionRpg);
+        });
+        keepExplosion.start();
+        for(int i = 0 ; i < enemies.size(); i++){
+            Enemy enemy = enemies.get(i);
+            if(explosion.intersects(enemy.getHitbox().getBoundsInLocal())){
+                enemy.takeDamage(10);
             }
         }
-        if(win){
-            gc.drawImage(ImageLoader.loadImage("ui/Confetti.png"),offsetX, offsetY, SCREEN_WIDHT, SCREEN_HEIGHT);
-        } else {
-            gc.drawImage(ImageLoader.loadImage("ui/BloodOverlay.png"), offsetX, offsetY, SCREEN_WIDHT, SCREEN_HEIGHT);
-        }
-    });
-
-    public void calculateDistancesKeys() {
-        calculateCurrentPlayerVertex();
-        FloydWarshalResult<Intersection> result = pathFindingGraph.floydWarshall();
-        for(Key key : keys){
-            Vertex<Intersection> keyVertex = intersections.get(key.getIntersection().getiPosition() + " " + key.getIntersection().getjPosition());
-            int keyPos = pathFindingGraph.vertexList.indexOf(keyVertex);
-            int playerPos = pathFindingGraph.vertexList.indexOf(currentPlayerVertex);
-            if(playerPos == -1) System.out.println("no player?");
-            if(keyPos == -1) System.out.println("no key");
-            double totalDistance = 0;
-            Vertex<Intersection> previous = result.getPrevious()[playerPos][keyPos];
-            while(previous != null) {
-                totalDistance += result.getDistances()[playerPos][keyPos];
-                keyPos = pathFindingGraph.vertexList.indexOf(previous);
-                previous = result.getPrevious()[playerPos][keyPos];
-            }
-            //totalDistance += calculateDistance(currentPlayerVertex.getValue().getxPosition(), player.getxPosition(), currentPlayerVertex.getValue().getyPosition(), player.getyPosition());
-            key.setDistanceToPlayer((int) totalDistance);
-        }
-        keys.sort(Key::compareToDistance);
-        String msj = "";
-        for(Key key : keys){
-            msj += "Shortest path to reach key "  + key.getId() + ": " + key.getDistanceToPlayer() + "\n";
-        }
-        Collections.reverse(keys);
-        if(keys.size() > 1){
-            msj += "Shortest path to keys in following order:";
-            for(Key key : keys){
-                msj += " " + key.getId();
-            }
-            msj += ": ";
-            double distance = 0;
-            for(int i = 0; i < keys.size()-1; i++){
-                Key key = keys.get(i);
-                Key nextKey = keys.get(i+1);
-                Vertex<Intersection> keyVertex = intersections.get(key.getIntersection().getiPosition() + " " + key.getIntersection().getjPosition());
-                Vertex<Intersection> nextKeyVertex = intersections.get(nextKey.getIntersection().getiPosition() + " " + nextKey.getIntersection().getjPosition());
-                int keyPos = pathFindingGraph.vertexList.indexOf(keyVertex);
-                int nextKeyPos = pathFindingGraph.vertexList.indexOf(currentPlayerVertex);
-                double totalDistance = 0;
-                Vertex<Intersection> previous = result.getPrevious()[nextKeyPos][keyPos];
-                while(previous != null) {
-                    totalDistance += result.getDistances()[nextKeyPos][keyPos];
-                    keyPos = pathFindingGraph.vertexList.indexOf(previous);
-                    previous = result.getPrevious()[nextKeyPos][keyPos];
+        ArrayList<Rectangle> wallsToDestroy = new ArrayList<>();
+        for(int i = 0; i < collisions.size(); i++){
+            Rectangle wall = collisions.get(i);
+            if(explosion.intersects(wall.getBoundsInLocal())){
+                int iPosition = (int) wall.getY()/32;
+                int jPosition = (int) wall.getX()/32;
+                boolean canBeRemoved = true;
+                if(map[iPosition][jPosition-1] == 67){
+                    canBeRemoved = false;
                 }
-                distance += totalDistance;
+                if(!(jPosition+1 >= map[iPosition].length)){
+                    if(map[iPosition][jPosition+1] == 67){
+                        canBeRemoved = false;
+                    }
+                }
+                if(map[iPosition-1][jPosition] == 67){
+                    canBeRemoved = false;
+                }
+                if(map[iPosition+1][jPosition] == 67){
+                    canBeRemoved = false;
+                }
+                if(canBeRemoved) wallsToDestroy.add(wall);
             }
-            msj += distance;
         }
-
-        keysPositions.setText(msj);
+        for (Rectangle wall : wallsToDestroy){
+            collisions.remove(wall);
+            int iPosition = (int) wall.getY()/32;
+            int jPosition = (int) wall.getX()/32;
+            map[iPosition][jPosition] = 14;
+        }
+        if(wallsToDestroy.isEmpty()) return;
+        Canvas largeCanvas = new Canvas(CANVAS_WIDTH, CANVAS_HEIGHT);
+        GraphicsContext largeGC = largeCanvas.getGraphicsContext2D();
+        for (int row = 0; row < map.length; row++) {
+            for (int col = 0; col < map[row].length; col++) {
+                int number = map[row][col];
+                if(number == 56 || number == 14){
+                    Vertex<Intersection> vertex = new Vertex<>(new Intersection(32*col, 32*row));
+                    if(intersections.get(vertex.getValue().getiPosition() + " " + vertex.getValue().getjPosition()) == null){
+                        pathFindingGraph.insertVertex(vertex);
+                        intersections.put(vertex.getValue().getiPosition() + " " + vertex.getValue().getjPosition(),vertex);
+                    }
+                }
+                Image image = images.get(number);
+                ImageView imageView = new ImageView(image);
+                imageView.setFitWidth(32);
+                imageView.setFitHeight(32);
+                largeGC.drawImage(imageView.getImage(), 32*col, 32*row);
+            }
+        }
+        generateEdgesForPathFinding();
+        Platform.runLater(new Runnable() {
+            @Override
+            public void run() {
+                mapImage = largeCanvas.snapshot(null, null);
+            }
+        });
     }
 
-    Thread movePlayer = new Thread(()->{
-        int oldPlayerX = player.getxPosition();
-        int oldPlayerY = player.getyPosition();
-        while (!lost && !win){
-            try {
-                Thread.sleep((long) 1000/60);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            if(player.isGoUp()){
-                player.setyPosition(player.getyPosition() - player.getSpeed());
-            }
-            if(player.isGoDown()){
-                player.setyPosition(player.getyPosition() + player.getSpeed());
-            }
-            if(player.isGoLeft()){
-                player.setxPosition(player.getxPosition() - player.getSpeed());
-            }
-            if(player.isGoRight()){
-                player.setxPosition(player.getxPosition() + player.getSpeed());
-            }
-            for(Rectangle obstacle : collisions){
-                if(player.getHitbox().intersects(obstacle.getBoundsInLocal())){
-                    player.setxPosition(oldPlayerX);
-                    player.setyPosition(oldPlayerY);
-                }
-            }
-            for(int i = 0; i < keys.size(); i++){
-                Key key = keys.get(i);
-                if(player.getHitbox().intersects(key.getHitbox().getBoundsInLocal())){
-                    player.setKeysCollected(player.getKeysCollected() + 1);
-                    keys.remove(key);
-                    System.out.println("found key");
-                }
-            }
-            oldPlayerX = player.getxPosition();
-            oldPlayerY = player.getyPosition();
-            for(Enemy enemy : enemies){
-                enemy.moveEnemy(currentPath, player, pathFindingGraph.vertexList, collisions, intersections);
-                if(player.getHitbox().intersects(enemy.getHitbox().getBoundsInLocal())){
-                    lost = true;
-                }
-            }
-        }
-    });
+    public void retry(){
+        if(!lost) return;
+        retry = true;
+    }
 
-    Thread trackPlayer = new Thread(() -> {
-        while (!win && !lost){
-            try {
-                Thread.sleep((long)10000);
-            } catch (InterruptedException e) {
-                throw new RuntimeException(e);
-            }
-            moveEnemiesToPlayer();
-        }
-    });
-
-
+    public void nextLevel() {
+        if(!win) return;
+        nextLevel = true;
+    }
 
     public void movePlayerW(){
         player.movePlayerW();
@@ -435,6 +777,45 @@ public class MapController implements Initializable {
 
     public void stopMovePlayerD(){
         player.stopMovePlayerD();
+    }
+
+    public void handleMouseMove(MouseEvent event) {
+        mouseX = event.getX();
+        mouseY = event.getY();
+        int offsetX = player.getOffsetX();
+        int offsetY = player.getOffsetY();
+        int x = SCREEN_WIDHT/2;
+        int y = SCREEN_HEIGHT/2;
+        if(offsetX < 0){
+            x += offsetX;
+        }
+        if(offsetY < 0){
+            y += offsetY;
+        }
+        if(offsetX > CANVAS_WIDTH - SCREEN_WIDHT){
+            x += Math.abs(offsetX - (CANVAS_WIDTH - SCREEN_WIDHT));
+        }
+        if(offsetY > CANVAS_HEIGHT - SCREEN_HEIGHT){
+            y += Math.abs(offsetY - (CANVAS_HEIGHT - SCREEN_HEIGHT));
+        }
+        angle = Math.toDegrees(Math.atan2(mouseY - y, mouseX - x));
+        player.getSprite().setRotate(angle);
+    }
+
+    public void changeToFirstGun(){
+        currentGun = 1;
+    }
+
+    public void changeToSecondGun(){
+        currentGun = 2;
+    }
+
+    public void shoot(){
+        shooting = true;
+    }
+
+    public void stopShooting(){
+        shooting = false;
     }
 
 }

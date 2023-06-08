@@ -65,10 +65,10 @@ public class NaryTree<V>{
 
     public void insertNode (V node, V dad){
         if (root == null) {
-            root = new Node<>(node);
+            root = new Node<>(node,null);
         }else{
             Node<V> nodeDad = root.searchValue(dad);
-            if (nodeDad != null)  nodeDad.insertNode(node);
+            if (nodeDad != null)  nodeDad.insertNode(node,nodeDad);
             else System.out.println("There is not dad");
         }
     }
@@ -76,7 +76,7 @@ public class NaryTree<V>{
     public Node<V> searchValue (V value){
         if (root == null)return null;
         else{
-            return this.searchValue(value);
+            return root.searchValue(value);
         }
     }
 

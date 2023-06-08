@@ -2,6 +2,7 @@ package com.example.model;
 
 import com.example.datastructures.Graph.Graph.DijkstraResult;
 import com.example.datastructures.Graph.Graph.Vertex;
+import com.example.datastructures.NaryTree.NaryTree;
 import javafx.scene.shape.Line;
 import javafx.scene.shape.Rectangle;
 
@@ -27,7 +28,7 @@ public class Enemy extends Avatar{
         this.setyPosition((int) (yPosition + dir.getY()));
     }
 
-    public void moveEnemy(DijkstraResult<Intersection> path, Player player, ArrayList<Vertex<Intersection>> vertexList, ArrayList<Rectangle> obstacles, HashMap<String, Vertex<Intersection>> intersections) {
+    public void moveEnemy(NaryTree<Intersection> path, Player player, ArrayList<Vertex<Intersection>> vertexList, ArrayList<Rectangle> obstacles, HashMap<String, Vertex<Intersection>> intersections) {
         Line line = new Line(xPosition+16, yPosition+16, player.getxPosition()+16, player.getyPosition()+16);
         line.setStrokeWidth(25);
         boolean lineIntersects = false;
@@ -53,12 +54,16 @@ public class Enemy extends Avatar{
         }
         if(path == null) return;
         if(!hasTraveled){
-            int pathPos = vertexList.indexOf(currentLocation);
-            Vertex<Intersection> vertexToMoveTo = path.getPrevious().get(pathPos);
-            if(vertexToMoveTo == null) return;
-            //currentLocation = vertexToMoveTo;
-            currentlyTravelingVertex = vertexToMoveTo;
-            hasTraveled = true;
+            if(path.searchValue(currentLocation.getValue()).getDad() == null){
+
+            } else {
+                Vertex<Intersection> vertexToMoveTo = vertexList.get(searchIntersectionInVertexList(path.searchValue(currentLocation.getValue()).getDad().getValue(), vertexList));
+                if(vertexToMoveTo == null) return;
+                //currentLocation = vertexToMoveTo;
+                currentlyTravelingVertex = vertexToMoveTo;
+                hasTraveled = true;
+            }
+
         }
         if(currentlyTravelingVertex == null){
             calculateCurrentEnemyVertex(obstacles, vertexList, intersections);
@@ -71,7 +76,11 @@ public class Enemy extends Avatar{
         if(Math.abs(xPosition - currentlyTravelingVertex.getValue().getxPosition()) < 5 && Math.abs(yPosition - currentlyTravelingVertex.getValue().getyPosition()) < 5){
             currentLocation = currentlyTravelingVertex;
             int pathPos = vertexList.indexOf(currentLocation);
-            currentlyTravelingVertex = path.getPrevious().get(pathPos);
+            if(path.searchValue(currentLocation.getValue()) != null){
+                if(path.searchValue(currentLocation.getValue()).getDad() != null) {
+                    currentlyTravelingVertex = vertexList.get(searchIntersectionInVertexList(path.searchValue(currentLocation.getValue()).getDad().getValue(), vertexList));
+                }
+            }
             if(currentlyTravelingVertex == null) return;
         }
         actuallyMoveEnemy();
@@ -105,7 +114,7 @@ public class Enemy extends Avatar{
         Vertex<Intersection> vertex = null;
         for(int i = 0; i < intersectionList.size() && !foundVertex; i++){
             Intersection intersection = intersectionList.get(i);
-            Line line = new Line(xPosition, yPosition, intersection.getxPosition(), intersection.getyPosition());
+            Line line = new Line(xPosition+16, yPosition+16, intersection.getxPosition(), intersection.getyPosition());
             boolean lineIntersects = false;
             for(int j = 0; j < obstacles.size() && !lineIntersects; j++){
                 if(line.intersects(obstacles.get(j).getBoundsInLocal())){
@@ -125,6 +134,20 @@ public class Enemy extends Avatar{
         double dx = x2 - x1;
         double dy = y2 - y1;
         return Math.sqrt(dx * dx + dy * dy);
+    }
+
+    private int searchIntersectionInVertexList(Intersection i, ArrayList<Vertex<Intersection>> vertexList){
+        for (int j = 0; j < vertexList.size(); j++) {
+            if(vertexList.get(j).getValue()==i){
+                return j;
+            }
+        }
+
+        return -1;
+    }
+
+    public void takeDamage(int damage){
+        health -= damage;
     }
 
 
